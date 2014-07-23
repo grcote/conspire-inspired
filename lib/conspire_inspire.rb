@@ -16,16 +16,43 @@ class ConspireInspire
     return_array
   end
 
+  def determine_friend_status(email_sender)
+    return_array = {}
+      current_friends = determine_current_friends(email_sender)
+      old_friends = determine_old_friends(email_sender)
+    return_array.merge(current_friends).merge(old_friends)
+  end
+
   def determine_current_friends(email_sender)
     return_array = {}
 
     total_emails = total_emails_sent(email_sender)
-    current_respondent = current_email_responses(email_sender)
-    recent_emails = recent_email_sent
+    current_respondents = current_email_respondents(email_sender)
+    current_emails = current_email_sent(email_sender)
 
     total_emails.each do |recipient, value|
-      if current_respondent[recipient] && (recent_emails[recipient] || recent_emails[email_sender])
-        return_array[recipient] = "Current Friend"
+      if current_emails[recipient] || current_emails[email_sender]
+        if current_respondents[recipient] && current_emails[recipient]
+          return_array[recipient] = "Current Friend"
+        end
+      end
+    end
+    return_array
+  end
+
+  def determine_old_friends(email_sender)
+    return_array = {}
+
+    total_emails = total_emails_sent(email_sender)
+    historical_respondents = historical_email_respondents(email_sender)
+    past_emails = past_email_sent(email_sender)
+
+    total_emails.each do |recipient, value|
+
+      if past_emails[recipient] || past_emails[email_sender]
+        if historical_respondents[recipient] && past_emails[recipient]
+        return_array[recipient] = "Old Friend"
+        end
       end
     end
     return_array
@@ -45,38 +72,86 @@ class ConspireInspire
     return_hash.select { |recipient, emails_received| emails_received >= 3 }
   end
 
-  def recent_email_sent
+  def current_email_sent(email_sender)
     return_hash = {}
+    emails_involving_sender = @emails_in_directory.select { |email| email.from.first == email_sender || email.to.first == email_sender }.sort
 
-    @emails_in_directory.each do |email|
+    emails_involving_sender.each do |email|
       if (Date.today - email.date).to_i <= 14
         return_hash[email.from.first] = true
+      else
+        return_hash[email.from.first] = false
       end
     end
     return_hash
   end
 
-  def current_email_responses(email_sender)
+  def past_email_sent(email_sender)
     return_hash = {}
-    reply_count = 0
+    emails_involving_sender = @emails_in_directory.select { |email| email.from.first == email_sender || email.to.first == email_sender }.sort
+
+    emails_involving_sender.each do |email|
+      if (Date.today - email.date).to_i > 14
+        return_hash[email.from.first] = true
+      else
+        return_hash[email.from.first] = false
+      end
+    end
+    return_hash
+  end
+
+  def current_email_respondents(email_sender)
+    return_hash = {}
+    reply_receipt_count = {}
     emails_sent_by_sender = @emails_in_directory.select { |email| email.from.first == email_sender }.sort.reverse
     replies_to_sender = @emails_in_directory.select { |email| (email.to.first == email_sender) && email.in_reply_to }
 
     emails_sent_by_sender.each do |initial_email|
       replies_to_sender.each do |reply_email|
 
-        if return_hash[reply_email.from.first].nil?
-          return_hash[reply_email.from.first] = 0
+        if reply_receipt_count[reply_email.from.first].nil?
+          reply_receipt_count[reply_email.from.first] = {:replies => 0, :receipts => 0}
         end
 
-        if reply_count < 3
+        if reply_receipt_count[reply_email.from.first][:receipts] < 3
           if initial_email.message_id == reply_email.in_reply_to
-            return_hash[reply_email.from.first] += 1
+            reply_receipt_count[reply_email.from.first][:replies] += 1
           end
         end
       end
-      reply_count += 1
+      reply_receipt_count[initial_email.to.first][:receipts] += 1
     end
+    reply_receipt_count.each do |message_replier, replies_receipts|
+      return_hash[message_replier] = replies_receipts[:replies]
+    end
+
     return_hash.select { |sender, replies| replies == 2 }
+  end
+
+  def historical_email_respondents(email_sender)
+    return_hash = {}
+    reply_receipt_count = {}
+    emails_sent_by_sender = @emails_in_directory.select { |email| email.from.first == email_sender }.sort
+    replies_to_sender = @emails_in_directory.select { |email| (email.to.first == email_sender) && email.in_reply_to }
+
+    emails_sent_by_sender.each do |initial_email|
+      replies_to_sender.each do |reply_email|
+
+        if reply_receipt_count[reply_email.from.first].nil?
+          reply_receipt_count[reply_email.from.first] = {:replies => 0, :receipts => 0}
+        end
+
+        if initial_email.message_id == reply_email.in_reply_to
+          reply_receipt_count[reply_email.from.first][:replies] += 1
+        end
+      end
+      reply_receipt_count[initial_email.to.first][:receipts] += 1
+    end
+
+    reply_receipt_count.each do |message_replier,replies_receipts|
+      return_hash[message_replier] = (replies_receipts[:replies].to_f/replies_receipts[:receipts].to_f).round(2)
+    end
+
+    return_hash.select { |sender, response_rate| response_rate >= 0.67}
   end
 end
