@@ -23,18 +23,8 @@ describe ConspireInspire do
     total_emails_sent = ConspireInspire.new(data_directory).total_emails_sent(email_sender)
 
     expect(total_emails_sent).to eq({
-                         "joe@example.com" => 3
-                       })
-  end
-
-  it 'totals the number of emails responded to by the recipient' do
-    data_directory = 'spec/fixtures'
-    email_sender = 'sue@example.com'
-    total_emails_responded_to = ConspireInspire.new(data_directory).total_email_responses(email_sender)
-
-    expect(total_emails_responded_to).to eq({
-                          "joe@example.com" => 2
-                                            })
+        "joe@example.com" => 3
+      })
   end
 
   it 'determines whether the most recent email received or sent by email sender has been within the last two weeks' do
@@ -42,8 +32,8 @@ describe ConspireInspire do
     recent_emails = ConspireInspire.new(data_directory).recent_email_sent
 
     expect(recent_emails).to eq({
-                          "joe@example.com" => true
-                                })
+        "joe@example.com" => true
+      })
   end
 
   it 'determines a senders current friends' do
@@ -52,19 +42,15 @@ describe ConspireInspire do
     current_friend = ConspireInspire.new(data_directory).determine_current_friends(email_sender)
 
     expect(current_friend).to eq({
-                                  "joe@example.com" => "Current Friend"
-                                })
+        "joe@example.com" => "Current Friend"
+      })
+  end
+
+  it 'returns the number of responses to the first three emails sent by sender to recipient' do
+    data_directory = 'spec/fixtures'
+    email_sender = 'sue@example.com'
+    current_email = ConspireInspire.new(data_directory).current_email_responses(email_sender)
+
+    expect(current_email).to eq({"joe@example.com"=>2})
   end
 end
-
-
-#Your code should look something like this:
-#
-#                                       SomeClass.new('data').relationships('joe@example.com')
-#and should return a result like this:
-#
-#                                  {
-#                                    "alice@example.com" => "Current Friend",
-#                                    "ephram@example.com" => "Old Friend",
-#                                    "phillis@example.com" => "Old Friend",
-#                                  }

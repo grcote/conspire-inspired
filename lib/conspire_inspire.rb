@@ -20,29 +20,20 @@ class ConspireInspire
     return_array = {}
 
     total_emails = total_emails_sent(email_sender)
-    total_responses = total_email_responses(email_sender)
+    current_respondent = current_email_responses(email_sender)
     recent_emails = recent_email_sent
 
-    total_emails.each do |recipient,value|
-      if total_responses[recipient] && (recent_emails[recipient] || recent_emails[email_sender])
+    total_emails.each do |recipient, value|
+      if current_respondent[recipient] && (recent_emails[recipient] || recent_emails[email_sender])
         return_array[recipient] = "Current Friend"
       end
     end
-
     return_array
   end
 
-
-
-
-
-
-
-
   def total_emails_sent(email_sender)
     return_hash = {}
-    emails_sent_by_sender = @emails_in_directory
-    emails_sent_by_sender = emails_sent_by_sender.select { |email| email.from.first == email_sender }
+    emails_sent_by_sender = @emails_in_directory.select { |email| email.from.first == email_sender }
 
     emails_sent_by_sender.each do |email|
       if return_hash[email.to.first].nil?
@@ -54,26 +45,6 @@ class ConspireInspire
     return_hash.select { |recipient, emails_received| emails_received >= 3 }
   end
 
-
-
-  def total_email_responses(email_sender)
-    return_hash = {}
-
-    @emails_in_directory.each do |email|
-      if (email.in_reply_to) && (email.to.first == email_sender)
-        if return_hash[email.from.first].nil?
-          return_hash[email.from.first] = 1
-        else
-          return_hash[email.from.first] += 1
-        end
-      end
-    end
-    return_hash.select { |sender, emails_sent| emails_sent >= 2 }
-  end
-
-  #need a method that returns a name and true if they've responded to the last three emails
-
-
   def recent_email_sent
     return_hash = {}
 
@@ -84,7 +55,28 @@ class ConspireInspire
     end
     return_hash
   end
+
+  def current_email_responses(email_sender)
+    return_hash = {}
+    reply_count = 0
+    emails_sent_by_sender = @emails_in_directory.select { |email| email.from.first == email_sender }.sort.reverse
+    replies_to_sender = @emails_in_directory.select { |email| (email.to.first == email_sender) && email.in_reply_to }
+
+    emails_sent_by_sender.each do |initial_email|
+      replies_to_sender.each do |reply_email|
+
+        if return_hash[reply_email.from.first].nil?
+          return_hash[reply_email.from.first] = 0
+        end
+
+        if reply_count < 3
+          if initial_email.message_id == reply_email.in_reply_to
+            return_hash[reply_email.from.first] += 1
+          end
+        end
+      end
+      reply_count += 1
+    end
+    return_hash.select { |sender, replies| replies == 2 }
+  end
 end
-
-#Joe has replied to 2 out of the last 3 emails
-
