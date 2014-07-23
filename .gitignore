@@ -1,1 +1,2 @@
 data/*.eml
+spec/fixtures/*.eml

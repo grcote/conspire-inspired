@@ -123,13 +123,5 @@ describe ConspireInspire do
           "emily@example.com" => "Old Friend"
         })
     end
-
-    #it 'determines a senders old friends' do
-    #  data_directory = 'spec/fixtures'
-    #  email_sender = 'sue@example.com'
-    #  old_friend = ConspireInspire.new(data_directory).determine_old_friends(email_sender)
-    #
-    #  expect(old_friend).to eq({ "emily@example.com" => "Old Friend" })
-    #end
   end
 end
