@@ -124,4 +124,26 @@ describe ConspireInspire do
         })
     end
   end
+
+  describe 'data check' do
+    it 'checks data' do
+      emails = ConspireInspire.new('data').return_data
+
+      p "Original emails from cecilia to fatima"
+      emails.each do |email|
+        if (email.to[0] == "fatima@example.com") && (email.from[0] == "cecelia@example.com")
+          p "to:#{email.to[0]} from:#{email.from[0]}"
+        end
+      end
+
+      p "*" * 20
+
+      p "Reply emails from fatima to cecilia"
+      emails.each do |email|
+        if email.in_reply_to && email.to[0] == "cecelia@example.com"
+          p "to:#{email.to[0]} from:#{email.from[0]}"
+        end
+      end
+    end
+  end
 end

@@ -3,6 +3,10 @@ class ConspireInspire
     @emails_in_directory = read_files(data_directory)
   end
 
+  def return_data
+    @emails_in_directory
+  end
+
   def read_files(data_directory)
     return_array = []
 
